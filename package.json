@@ -1,7 +1,7 @@
 {
   "name": "nts-widget",
   "productName": "NTS Widget",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "description": "Unofficial macOS menu bar widget for NTS Radio — full schedule, live info, and in-app streaming.",
   "author": "NTS Widget contributors",
   "license": "MIT",
