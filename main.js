@@ -1,15 +1,33 @@
 const { app, BrowserWindow, Tray, Menu, screen, ipcMain, shell, globalShortcut, nativeImage } = require("electron");
 const path = require("path");
+const fs = require("fs");
 
 let win, tray, trayIcon, emptyIcon;
+
+const settingsPath = path.join(app.getPath("userData"), "settings.json");
+
+function loadPersistedSettings() {
+  try {
+    return JSON.parse(fs.readFileSync(settingsPath, "utf8"));
+  } catch {
+    return {};
+  }
+}
+
+function savePersistedSettings() {
+  fs.writeFileSync(settingsPath, JSON.stringify({ pinnedToDesktop, showInDock }));
+}
+
+const persisted = loadPersistedSettings();
+
 // "desktop" window level sits below the Finder desktop-icon click layer, so
 // it can't be dragged or resized there — default to a normal floating
 // window (fully interactive); "Pin to Desktop" trades that away for sitting
 // behind other windows.
-let pinnedToDesktop = false;
+let pinnedToDesktop = persisted.pinnedToDesktop || false;
 // Mirrored from the renderer so the tray menu can checkmark the right station.
 let playingChannel = null;
-let showInDock = true;
+let showInDock = persisted.showInDock !== undefined ? persisted.showInDock : true;
 
 function createWindow() {
   const { width } = screen.getPrimaryDisplay().workAreaSize;
@@ -32,7 +50,9 @@ function createWindow() {
   });
 
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-  win.setAlwaysOnTop(true, "floating");
+  win.setResizable(!pinnedToDesktop);
+  win.setMovable(!pinnedToDesktop);
+  win.setAlwaysOnTop(true, pinnedToDesktop ? "desktop" : "floating");
 
   win.loadFile("renderer/index.html");
 }
@@ -59,6 +79,7 @@ function setPinnedToDesktop(state) {
   win.setResizable(!state);
   win.setMovable(!state);
   win.setAlwaysOnTop(true, state ? "desktop" : "floating");
+  savePersistedSettings();
   broadcastSettings();
 }
 
@@ -72,6 +93,7 @@ function setShowInDock(state) {
   showInDock = state;
   if (state) app.dock.show();
   else app.dock.hide();
+  savePersistedSettings();
   broadcastSettings();
 }
 
@@ -100,6 +122,7 @@ ipcMain.on("playing-channel-changed", (event, channel) => {
 
 app.whenReady().then(() => {
   createWindow();
+  if (!showInDock) app.dock.hide();
 
   trayIcon = nativeImage.createFromPath(path.join(__dirname, "menubar-icon.png"));
   trayIcon.setTemplateImage(true);

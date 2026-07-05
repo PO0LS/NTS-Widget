@@ -4,8 +4,8 @@ import { createRoot } from "react-dom/client";
 const mono = `"SF Mono", "Menlo", "Courier New", monospace`;
 
 const STREAM_URLS = {
-  1: "http://stream-master.ntslive.net:8000/stream",
-  2: "http://stream-master.ntslive.net:8000/stream2",
+  "1": "http://stream-master.ntslive.net:8000/stream",
+  "2": "http://stream-master.ntslive.net:8000/stream2",
 };
 
 const FAVORITES_KEY = "nts-widget-favorites";
@@ -23,15 +23,7 @@ const saveFavorites = (set) => {
 };
 
 const DEFAULT_ACCENT = "#ff3b1f";
-const ACCENT_PRESETS = [
-  "#ff3b1f",
-  "#3b82f6",
-  "#22c55e",
-  "#a855f7",
-  "#ec4899",
-  "#eab308",
-  "#ffffff",
-];
+const ACCENT_PRESETS = ["#ff3b1f", "#3b82f6", "#22c55e", "#a855f7", "#ec4899", "#eab308", "#ffffff"];
 
 const PREFS_KEY = "nts-widget-prefs";
 const DEFAULT_PREFS = {
@@ -81,19 +73,14 @@ const THEME_VARS = {
 
 const resolveTheme = (theme) => {
   if (theme === "auto") {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   }
   return theme;
 };
 
 const loadPrefs = () => {
   try {
-    return {
-      ...DEFAULT_PREFS,
-      ...JSON.parse(localStorage.getItem(PREFS_KEY) || "{}"),
-    };
+    return { ...DEFAULT_PREFS, ...JSON.parse(localStorage.getItem(PREFS_KEY) || "{}") };
   } catch {
     return { ...DEFAULT_PREFS };
   }
@@ -155,8 +142,7 @@ const formatTrayTitle = (title, channel) => {
 // Pulled straight from the schedule endpoint's episode link (.../shows/{alias}/episodes/...)
 // so the favorites view can match shows without an extra per-row fetch.
 const showAliasFromBroadcast = (broadcast) => {
-  const link =
-    broadcast.links && broadcast.links.find((l) => l.rel === "details");
+  const link = broadcast.links && broadcast.links.find((l) => l.rel === "details");
   const match = link && link.href.match(/\/shows\/([^/]+)\/episodes\//);
   return match ? match[1] : null;
 };
@@ -164,16 +150,11 @@ const showAliasFromBroadcast = (broadcast) => {
 const fmtClock = (iso, use12h) => {
   if (!iso) return "--:--";
   const d = new Date(iso);
-  return d.toLocaleTimeString([], {
-    hour: use12h ? "numeric" : "2-digit",
-    minute: "2-digit",
-    hour12: !!use12h,
-  });
+  return d.toLocaleTimeString([], { hour: use12h ? "numeric" : "2-digit", minute: "2-digit", hour12: !!use12h });
 };
 
 const episodeUrl = (broadcast) => {
-  const link =
-    broadcast.links && broadcast.links.find((l) => l.rel === "details");
+  const link = broadcast.links && broadcast.links.find((l) => l.rel === "details");
   if (!link) return null;
   return link.href.replace("/api/v2", "");
 };
@@ -237,14 +218,8 @@ const FUTURE_COUNT = 14;
 async function fetchSchedules() {
   const bust = Date.now();
   const [ch1, ch2] = await Promise.all([
-    fetch(
-      `https://www.nts.live/api/v2/radio/schedule/1?past_days=1&_=${bust}`,
-      { cache: "no-store" },
-    ).then((r) => r.json()),
-    fetch(
-      `https://www.nts.live/api/v2/radio/schedule/2?past_days=1&_=${bust}`,
-      { cache: "no-store" },
-    ).then((r) => r.json()),
+    fetch(`https://www.nts.live/api/v2/radio/schedule/1?past_days=1&_=${bust}`, { cache: "no-store" }).then((r) => r.json()),
+    fetch(`https://www.nts.live/api/v2/radio/schedule/2?past_days=1&_=${bust}`, { cache: "no-store" }).then((r) => r.json()),
   ]);
   return { ch1, ch2 };
 }
@@ -252,9 +227,7 @@ async function fetchSchedules() {
 // The live endpoint (unlike the schedule endpoint) embeds artwork, genre,
 // location and description for whatever's on air right now.
 async function fetchLive() {
-  const res = await fetch(`https://www.nts.live/api/v2/live?_=${Date.now()}`, {
-    cache: "no-store",
-  }).then((r) => r.json());
+  const res = await fetch(`https://www.nts.live/api/v2/live?_=${Date.now()}`, { cache: "no-store" }).then((r) => r.json());
   const results = res.results || [];
   const find = (ch) => {
     const entry = results.find((r) => r.channel_name === ch);
@@ -263,49 +236,30 @@ async function fetchLive() {
   return { ch1: find("1"), ch2: find("2") };
 }
 
-const Row = ({
-  broadcast,
-  expanded,
-  onToggle,
-  favorites,
-  onToggleFavorite,
-  notificationsEnabled,
-  use12h,
-}) => {
+const Row = ({ broadcast, expanded, onToggle, favorites, onToggleFavorite, notificationsEnabled, use12h }) => {
   const start = new Date(broadcast.start_timestamp).getTime();
   const end = new Date(broadcast.end_timestamp).getTime();
   const now = Date.now();
   const isLive = start <= now && now < end;
   const isFuture = start > now;
   const url = episodeUrl(broadcast);
-  const progress = isLive
-    ? Math.min(100, Math.max(0, ((now - start) / (end - start)) * 100))
-    : 0;
+  const progress = isLive ? Math.min(100, Math.max(0, ((now - start) / (end - start)) * 100)) : 0;
 
   const [episode, setEpisode] = useState(null);
   useEffect(() => {
     let cancelled = false;
-    const link =
-      broadcast.links && broadcast.links.find((l) => l.rel === "details");
+    const link = broadcast.links && broadcast.links.find((l) => l.rel === "details");
     if (!link) return;
     fetch(link.href)
       .then((r) => r.json())
       .then((ep) => {
         if (cancelled) return;
         setEpisode(ep);
-        if (
-          notificationsEnabled &&
-          isFuture &&
-          favorites.has(ep.show_alias) &&
-          !notifiedEpisodes.has(ep.episode_alias)
-        ) {
+        if (notificationsEnabled && isFuture && favorites.has(ep.show_alias) && !notifiedEpisodes.has(ep.episode_alias)) {
           notifiedEpisodes.add(ep.episode_alias);
-          new Notification(
-            `Coming up: ${parseRepeatTitle(ep.name || broadcast.broadcast_title).title}`,
-            {
-              body: `Starts at ${fmtClock(broadcast.start_timestamp, use12h)}`,
-            },
-          );
+          new Notification(`Coming up: ${parseRepeatTitle(ep.name || broadcast.broadcast_title).title}`, {
+            body: `Starts at ${fmtClock(broadcast.start_timestamp, use12h)}`,
+          });
         }
       })
       .catch(() => {});
@@ -314,27 +268,17 @@ const Row = ({
     };
   }, [broadcast.links]);
 
-  const genre =
-    episode && episode.genres && episode.genres.length
-      ? episode.genres[0].value
-      : null;
-  const art =
-    episode &&
-    episode.media &&
-    (episode.media.picture_small || episode.media.picture_medium);
+  const genre = episode && episode.genres && episode.genres.length ? episode.genres[0].value : null;
+  const art = episode && episode.media && (episode.media.picture_small || episode.media.picture_medium);
   const location = episode && episode.location_long;
   const showAlias = episode && episode.show_alias;
   const isFavorite = showAlias && favorites.has(showAlias);
-  const { title: cleanTitle, isRepeat } = parseRepeatTitle(
-    broadcast.broadcast_title,
-  );
+  const { title: cleanTitle, isRepeat } = parseRepeatTitle(broadcast.broadcast_title);
 
   return (
     <div
       style={{
-        borderLeft: isLive
-          ? "3px solid var(--accent)"
-          : "3px solid transparent",
+        borderLeft: isLive ? "3px solid var(--accent)" : "3px solid transparent",
         borderBottom: "1px solid var(--border)",
         opacity: isFuture ? 0.4 : 1,
       }}
@@ -349,32 +293,13 @@ const Row = ({
           cursor: "pointer",
         }}
       >
-        <div
-          style={{
-            fontFamily: mono,
-            fontSize: 11,
-            color: isLive ? "var(--accent)" : "var(--grey-666)",
-            paddingTop: 2,
-            width: 58,
-            flexShrink: 0,
-            whiteSpace: "nowrap",
-          }}
-        >
+        <div style={{ fontFamily: mono, fontSize: 11, color: isLive ? "var(--accent)" : "var(--grey-666)", paddingTop: 2, width: 58, flexShrink: 0, whiteSpace: "nowrap" }}>
           {fmtClock(broadcast.start_timestamp, use12h)}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             {isLive && (
-              <div
-                className="pulse-dot"
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: "50%",
-                  background: "var(--accent)",
-                  flexShrink: 0,
-                }}
-              />
+              <div className="pulse-dot" style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent)", flexShrink: 0 }} />
             )}
             {!isLive && showAlias && (
               <div
@@ -392,51 +317,39 @@ const Row = ({
                 {isFavorite ? "★" : "☆"}
               </div>
             )}
-            <div
-              style={{
-                flex: "0 1 auto",
-                minWidth: 0,
-                fontSize: 13,
-                fontWeight: 600,
-                color: "var(--text)",
-                textTransform: "uppercase",
-                letterSpacing: -0.1,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
+            <div style={{
+              flex: "0 1 auto",
+              minWidth: 0,
+              fontSize: 13,
+              fontWeight: 600,
+              color: "var(--text)",
+              textTransform: "uppercase",
+              letterSpacing: -0.1,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}>
               {cleanTitle}
             </div>
             {isRepeat && <RepeatIcon />}
             {genre && (
-              <div
-                style={{
-                  fontFamily: mono,
-                  fontSize: 9,
-                  color: "var(--grey-666)",
-                  letterSpacing: 0.5,
-                  textTransform: "uppercase",
-                  flexShrink: 0,
-                  whiteSpace: "nowrap",
-                  marginLeft: "auto",
-                }}
-              >
+              <div style={{
+                fontFamily: mono,
+                fontSize: 9,
+                color: "var(--grey-666)",
+                letterSpacing: 0.5,
+                textTransform: "uppercase",
+                flexShrink: 0,
+                whiteSpace: "nowrap",
+                marginLeft: "auto",
+              }}>
                 {genre}
               </div>
             )}
           </div>
           {isLive && (
-            <div
-              style={{ marginTop: 6, height: 2, background: "var(--surface)" }}
-            >
-              <div
-                style={{
-                  height: "100%",
-                  width: `${progress}%`,
-                  background: "var(--accent)",
-                }}
-              />
+            <div style={{ marginTop: 6, height: 2, background: "var(--surface)" }}>
+              <div style={{ height: "100%", width: `${progress}%`, background: "var(--accent)" }} />
             </div>
           )}
         </div>
@@ -445,38 +358,17 @@ const Row = ({
         <div style={{ display: "flex", gap: 12, padding: "0 16px 12px 12px" }}>
           <div style={{ width: 42, flexShrink: 0 }}>
             {art && (
-              <img
-                src={art}
-                width={36}
-                height={36}
-                style={{ objectFit: "cover", filter: "grayscale(15%)" }}
-              />
+              <img src={art} width={36} height={36} style={{ objectFit: "cover", filter: "grayscale(15%)" }} />
             )}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             {(location || genre) && (
-              <div
-                style={{
-                  fontFamily: mono,
-                  fontSize: 10,
-                  color: "var(--grey-777)",
-                  letterSpacing: 0.3,
-                }}
-              >
+              <div style={{ fontFamily: mono, fontSize: 10, color: "var(--grey-777)", letterSpacing: 0.3 }}>
                 {[location, genre].filter(Boolean).join("  ·  ")}
               </div>
             )}
             {episode.description && (
-              <div
-                style={{
-                  fontSize: 11,
-                  color: "var(--grey-999)",
-                  marginTop: 4,
-                  lineHeight: 1.4,
-                  maxHeight: 46,
-                  overflowY: "auto",
-                }}
-              >
+              <div style={{ fontSize: 11, color: "var(--grey-999)", marginTop: 4, lineHeight: 1.4, maxHeight: 46, overflowY: "auto" }}>
                 {decodeHtml(episode.description)}
               </div>
             )}
@@ -508,52 +400,27 @@ const Row = ({
   );
 };
 
-const NowPlaying = ({
-  now,
-  isPlaying,
-  onTogglePlay,
-  favorites,
-  onToggleFavorite,
-  sleepMinutes,
-  onCycleSleep,
-  use12h,
-}) => {
+const NowPlaying = ({ now, isPlaying, onTogglePlay, favorites, onToggleFavorite, sleepMinutes, onCycleSleep, use12h }) => {
   if (!now) {
     return (
-      <div
-        style={{
-          padding: 18,
-          color: "var(--grey-666)",
-          fontFamily: mono,
-          fontSize: 12,
-          borderBottom: "1px solid var(--border)",
-        }}
-      >
+      <div style={{ padding: 18, color: "var(--grey-666)", fontFamily: mono, fontSize: 12, borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
         couldn't reach NTS
       </div>
     );
   }
 
   const details = (now.embeds && now.embeds.details) || {};
-  const art =
-    details.media &&
-    (details.media.picture_medium || details.media.background_medium);
-  const genre =
-    details.genres && details.genres.length ? details.genres[0].value : null;
+  const art = details.media && (details.media.picture_medium || details.media.background_medium);
+  const genre = details.genres && details.genres.length ? details.genres[0].value : null;
   const location = details.location_long || null;
   const start = new Date(now.start_timestamp).getTime();
   const end = new Date(now.end_timestamp).getTime();
   const nowMs = Date.now();
-  const progress = Math.min(
-    100,
-    Math.max(0, ((nowMs - start) / (end - start)) * 100),
-  );
+  const progress = Math.min(100, Math.max(0, ((nowMs - start) / (end - start)) * 100));
   const url = liveEpisodeUrl(now);
   const showAlias = details.show_alias;
   const isFavorite = showAlias && favorites.has(showAlias);
-  const { title: cleanTitle, isRepeat } = parseRepeatTitle(
-    details.name || now.broadcast_title,
-  );
+  const { title: cleanTitle, isRepeat } = parseRepeatTitle(details.name || now.broadcast_title);
 
   return (
     <div
@@ -562,21 +429,16 @@ const NowPlaying = ({
         gap: 14,
         padding: "16px 16px 14px",
         borderBottom: "1px solid var(--border)",
+        flexShrink: 0,
       }}
     >
       {art && (
-        <div
-          style={{ position: "relative", width: 76, height: 76, flexShrink: 0 }}
-        >
+        <div style={{ position: "relative", width: 76, height: 76, flexShrink: 0 }}>
           <img
             src={art}
             width={76}
             height={76}
-            style={{
-              objectFit: "cover",
-              filter: "grayscale(15%)",
-              display: "block",
-            }}
+            style={{ objectFit: "cover", filter: "grayscale(15%)", display: "block" }}
           />
           <div
             onClick={onTogglePlay}
@@ -606,16 +468,14 @@ const NowPlaying = ({
                   <div style={{ width: 3, height: 12, background: "#fff" }} />
                 </div>
               ) : (
-                <div
-                  style={{
-                    width: 0,
-                    height: 0,
-                    borderTop: "6px solid transparent",
-                    borderBottom: "6px solid transparent",
-                    borderLeft: "10px solid #fff",
-                    marginLeft: 2,
-                  }}
-                />
+                <div style={{
+                  width: 0,
+                  height: 0,
+                  borderTop: "6px solid transparent",
+                  borderBottom: "6px solid transparent",
+                  borderLeft: "10px solid #fff",
+                  marginLeft: 2,
+                }} />
               )}
             </div>
           </div>
@@ -638,58 +498,16 @@ const NowPlaying = ({
       )}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <div
-            className="pulse-dot"
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: "50%",
-              background: "var(--accent)",
-              flexShrink: 0,
-            }}
-          />
-          <span
-            style={{
-              fontFamily: mono,
-              fontSize: 10,
-              letterSpacing: 2,
-              color: "var(--accent)",
-              textTransform: "uppercase",
-            }}
-          >
+          <div className="pulse-dot" style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent)", flexShrink: 0 }} />
+          <span style={{ fontFamily: mono, fontSize: 10, letterSpacing: 2, color: "var(--accent)", textTransform: "uppercase" }}>
             On Air
           </span>
-          <span
-            style={{
-              fontFamily: mono,
-              fontSize: 10,
-              color: "var(--grey-555)",
-              marginLeft: "auto",
-            }}
-          >
-            {fmtClock(now.start_timestamp, use12h)}&ndash;
-            {fmtClock(now.end_timestamp, use12h)}
+          <span style={{ fontFamily: mono, fontSize: 10, color: "var(--grey-555)", marginLeft: "auto" }}>
+            {fmtClock(now.start_timestamp, use12h)}&ndash;{fmtClock(now.end_timestamp, use12h)}
           </span>
         </div>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            marginTop: 6,
-          }}
-        >
-          <div
-            style={{
-              fontSize: 20,
-              fontWeight: 700,
-              color: "var(--text)",
-              textTransform: "uppercase",
-              lineHeight: 1.2,
-              letterSpacing: -0.3,
-              minWidth: 0,
-            }}
-          >
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+          <div style={{ fontSize: 20, fontWeight: 700, color: "var(--text)", textTransform: "uppercase", lineHeight: 1.2, letterSpacing: -0.3, minWidth: 0 }}>
             {cleanTitle}
             {isRepeat && <RepeatIcon />}
           </div>
@@ -717,27 +535,14 @@ const NowPlaying = ({
           {showAlias && (
             <div
               onClick={() => onToggleFavorite(showAlias)}
-              style={{
-                fontSize: 15,
-                color: isFavorite ? "var(--accent)" : "var(--grey-444)",
-                flexShrink: 0,
-                cursor: "pointer",
-              }}
+              style={{ fontSize: 15, color: isFavorite ? "var(--accent)" : "var(--grey-444)", flexShrink: 0, cursor: "pointer" }}
             >
               {isFavorite ? "★" : "☆"}
             </div>
           )}
         </div>
         {(location || genre) && (
-          <div
-            style={{
-              fontFamily: mono,
-              fontSize: 11,
-              color: "var(--grey-888)",
-              marginTop: 4,
-              letterSpacing: 0.3,
-            }}
-          >
+          <div style={{ fontFamily: mono, fontSize: 11, color: "var(--grey-888)", marginTop: 4, letterSpacing: 0.3 }}>
             {[location, genre].filter(Boolean).join("  ·  ")}
           </div>
         )}
@@ -759,46 +564,20 @@ const NowPlaying = ({
           </div>
         )}
         <div style={{ marginTop: 10, height: 2, background: "var(--surface)" }}>
-          <div
-            style={{
-              height: "100%",
-              width: `${progress}%`,
-              background: "var(--accent)",
-            }}
-          />
+          <div style={{ height: "100%", width: `${progress}%`, background: "var(--accent)" }} />
         </div>
       </div>
     </div>
   );
 };
 
-const ChannelPane = ({
-  data,
-  active,
-  favorites,
-  onToggleFavorite,
-  notificationsEnabled,
-  use12h,
-}) => {
+const ChannelPane = ({ data, active, favorites, onToggleFavorite, notificationsEnabled, use12h }) => {
   const [expandedKey, setExpandedKey] = useState(null);
 
   if (!active) return null;
 
   if (!data || !data.results || !data.results.length) {
-    return (
-      <div
-        style={{
-          height: 300,
-          boxSizing: "border-box",
-          padding: 20,
-          color: "var(--grey-666)",
-          fontFamily: mono,
-          fontSize: 12,
-        }}
-      >
-        couldn't reach NTS
-      </div>
-    );
+    return <div style={{ padding: 20, color: "var(--grey-666)", fontFamily: mono, fontSize: 12 }}>couldn't reach NTS</div>;
   }
 
   const rows = flattenBroadcasts(data.results);
@@ -810,7 +589,7 @@ const ChannelPane = ({
   let lastDateKey = null;
 
   return (
-    <div style={{ height: 300, overflowY: "auto" }}>
+    <div>
       {windowRows.map((b, i) => {
         const key = windowStart + i;
         const dateKey = localDateKey(b.start_timestamp);
@@ -819,25 +598,14 @@ const ChannelPane = ({
         return (
           <React.Fragment key={key}>
             {showDateDivider && (
-              <div
-                style={{
-                  padding: "10px 16px 6px",
-                  fontFamily: mono,
-                  fontSize: 10,
-                  color: "var(--grey-555)",
-                  letterSpacing: 2,
-                  textTransform: "uppercase",
-                }}
-              >
+              <div style={{ padding: "10px 16px 6px", fontFamily: mono, fontSize: 10, color: "var(--grey-555)", letterSpacing: 2, textTransform: "uppercase" }}>
                 {localDateLabel(b.start_timestamp)}
               </div>
             )}
             <Row
               broadcast={b}
               expanded={expandedKey === key}
-              onToggle={() =>
-                setExpandedKey((prev) => (prev === key ? null : key))
-              }
+              onToggle={() => setExpandedKey((prev) => (prev === key ? null : key))}
               favorites={favorites}
               onToggleFavorite={onToggleFavorite}
               notificationsEnabled={notificationsEnabled}
@@ -853,16 +621,7 @@ const ChannelPane = ({
 const FavoritesView = ({ data, favorites, onToggleFavorite, use12h }) => {
   if (!favorites.size) {
     return (
-      <div
-        style={{
-          height: 300,
-          boxSizing: "border-box",
-          padding: 20,
-          color: "var(--grey-666)",
-          fontFamily: mono,
-          fontSize: 12,
-        }}
-      >
+      <div style={{ padding: 20, color: "var(--grey-666)", fontFamily: mono, fontSize: 12 }}>
         No favorites yet &mdash; tap &#9734; on any show to track it.
       </div>
     );
@@ -879,31 +638,18 @@ const FavoritesView = ({ data, favorites, onToggleFavorite, use12h }) => {
       }
     }
   }
-  entries.sort(
-    (a, b) =>
-      new Date(a.broadcast.start_timestamp) -
-      new Date(b.broadcast.start_timestamp),
-  );
+  entries.sort((a, b) => new Date(a.broadcast.start_timestamp) - new Date(b.broadcast.start_timestamp));
 
   if (!entries.length) {
     return (
-      <div
-        style={{
-          height: 300,
-          boxSizing: "border-box",
-          padding: 20,
-          color: "var(--grey-666)",
-          fontFamily: mono,
-          fontSize: 12,
-        }}
-      >
+      <div style={{ padding: 20, color: "var(--grey-666)", fontFamily: mono, fontSize: 12 }}>
         None of your favorited shows are in the current schedule window yet.
       </div>
     );
   }
 
   return (
-    <div style={{ height: 300, overflowY: "auto" }}>
+    <div>
       {entries.map((e, i) => {
         const start = new Date(e.broadcast.start_timestamp).getTime();
         const end = new Date(e.broadcast.end_timestamp).getTime();
@@ -911,9 +657,7 @@ const FavoritesView = ({ data, favorites, onToggleFavorite, use12h }) => {
         const isLive = start <= now && now < end;
         const isFuture = start > now;
         const url = episodeUrl(e.broadcast);
-        const { title: cleanTitle, isRepeat } = parseRepeatTitle(
-          e.broadcast.broadcast_title,
-        );
+        const { title: cleanTitle, isRepeat } = parseRepeatTitle(e.broadcast.broadcast_title);
         return (
           <div
             key={i}
@@ -922,49 +666,26 @@ const FavoritesView = ({ data, favorites, onToggleFavorite, use12h }) => {
               alignItems: "center",
               gap: 10,
               padding: "10px 16px",
-              borderLeft: isLive
-                ? "3px solid var(--accent)"
-                : "3px solid transparent",
+              borderLeft: isLive ? "3px solid var(--accent)" : "3px solid transparent",
               borderBottom: "1px solid var(--border)",
               opacity: isFuture ? 0.4 : 1,
             }}
           >
-            <div
-              style={{
-                fontFamily: mono,
-                fontSize: 10,
-                color: "var(--grey-555)",
-                width: 12,
-                flexShrink: 0,
-              }}
-            >
-              {e.channel}
-            </div>
-            <div
-              style={{
-                fontFamily: mono,
-                fontSize: 11,
-                color: isLive ? "var(--accent)" : "var(--grey-666)",
-                width: 58,
-                flexShrink: 0,
-                whiteSpace: "nowrap",
-              }}
-            >
+            <div style={{ fontFamily: mono, fontSize: 10, color: "var(--grey-555)", width: 12, flexShrink: 0 }}>{e.channel}</div>
+            <div style={{ fontFamily: mono, fontSize: 11, color: isLive ? "var(--accent)" : "var(--grey-666)", width: 58, flexShrink: 0, whiteSpace: "nowrap" }}>
               {fmtClock(e.broadcast.start_timestamp, use12h)}
             </div>
-            <div
-              style={{
-                flex: 1,
-                minWidth: 0,
-                fontSize: 13,
-                fontWeight: 600,
-                color: "var(--text)",
-                textTransform: "uppercase",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
+            <div style={{
+              flex: 1,
+              minWidth: 0,
+              fontSize: 13,
+              fontWeight: 600,
+              color: "var(--text)",
+              textTransform: "uppercase",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}>
               {cleanTitle}
             </div>
             {isRepeat && <RepeatIcon />}
@@ -988,12 +709,7 @@ const FavoritesView = ({ data, favorites, onToggleFavorite, use12h }) => {
             )}
             <div
               onClick={() => onToggleFavorite(e.alias)}
-              style={{
-                fontSize: 13,
-                color: "var(--accent)",
-                cursor: "pointer",
-                flexShrink: 0,
-              }}
+              style={{ fontSize: 13, color: "var(--accent)", cursor: "pointer", flexShrink: 0 }}
             >
               &#9733;
             </div>
@@ -1018,38 +734,22 @@ const SettingsToggle = ({ label, checked, onChange, disabled }) => (
     }}
   >
     <span style={{ fontSize: 13, color: "var(--text)" }}>{label}</span>
-    <div
-      style={{
-        width: 28,
-        height: 15,
-        borderRadius: 8,
-        background: checked ? "var(--accent)" : "var(--border-strong)",
-        position: "relative",
-        flexShrink: 0,
-      }}
-    >
-      <div
-        style={{
-          position: "absolute",
-          top: 1.5,
-          left: checked ? 14.5 : 1.5,
-          width: 12,
-          height: 12,
-          borderRadius: "50%",
-          background: "#fff",
-        }}
-      />
+    <div style={{ width: 28, height: 15, borderRadius: 8, background: checked ? "var(--accent)" : "var(--border-strong)", position: "relative", flexShrink: 0 }}>
+      <div style={{
+        position: "absolute",
+        top: 1.5,
+        left: checked ? 14.5 : 1.5,
+        width: 12,
+        height: 12,
+        borderRadius: "50%",
+        background: "#fff",
+      }} />
     </div>
   </div>
 );
 
 const SettingsView = ({ prefs, onUpdatePref }) => {
-  const [settings, setSettings] = useState({
-    pinnedToDesktop: false,
-    launchAtLogin: false,
-    launchAtLoginAvailable: false,
-    showInDock: true,
-  });
+  const [settings, setSettings] = useState({ pinnedToDesktop: false, launchAtLogin: false, launchAtLoginAvailable: false, showInDock: true });
 
   useEffect(() => {
     window.nts.getSettings().then(setSettings);
@@ -1057,25 +757,11 @@ const SettingsView = ({ prefs, onUpdatePref }) => {
   }, []);
 
   return (
-    <div style={{ height: 300, overflowY: "auto" }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "12px 16px",
-          borderBottom: "1px solid var(--border)",
-        }}
-      >
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderBottom: "1px solid var(--border)" }}>
         <span style={{ fontSize: 13, color: "var(--text)" }}>Appearance</span>
-        <div
-          style={{ display: "flex", gap: 6, fontFamily: mono, fontSize: 10 }}
-        >
-          {[
-            ["dark", "DARK"],
-            ["light", "LIGHT"],
-            ["auto", "AUTO"],
-          ].map(([key, label]) => (
+        <div style={{ display: "flex", gap: 6, fontFamily: mono, fontSize: 10 }}>
+          {[["dark", "DARK"], ["light", "LIGHT"], ["auto", "AUTO"]].map(([key, label]) => (
             <div
               key={key}
               onClick={() => onUpdatePref("theme", key)}
@@ -1083,8 +769,7 @@ const SettingsView = ({ prefs, onUpdatePref }) => {
                 padding: "4px 8px",
                 borderRadius: 3,
                 color: prefs.theme === key ? "#fff" : "var(--grey-666)",
-                background:
-                  prefs.theme === key ? "var(--accent)" : "var(--surface)",
+                background: prefs.theme === key ? "var(--accent)" : "var(--surface)",
                 cursor: "pointer",
               }}
             >
@@ -1093,15 +778,7 @@ const SettingsView = ({ prefs, onUpdatePref }) => {
           ))}
         </div>
       </div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "12px 16px",
-          borderBottom: "1px solid var(--border)",
-        }}
-      >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderBottom: "1px solid var(--border)" }}>
         <span style={{ fontSize: 13, color: "var(--text)" }}>Accent Color</span>
         <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
           {ACCENT_PRESETS.map((c) => (
@@ -1113,10 +790,7 @@ const SettingsView = ({ prefs, onUpdatePref }) => {
                 height: 14,
                 borderRadius: "50%",
                 background: c,
-                border:
-                  prefs.accentColor === c
-                    ? "2px solid var(--text)"
-                    : "1px solid var(--border-strong)",
+                border: prefs.accentColor === c ? "2px solid var(--text)" : "1px solid var(--border-strong)",
                 cursor: "pointer",
                 flexShrink: 0,
               }}
@@ -1126,14 +800,7 @@ const SettingsView = ({ prefs, onUpdatePref }) => {
             type="color"
             value={prefs.accentColor}
             onChange={(e) => onUpdatePref("accentColor", e.target.value)}
-            style={{
-              width: 16,
-              height: 16,
-              padding: 0,
-              border: "none",
-              background: "none",
-              cursor: "pointer",
-            }}
+            style={{ width: 16, height: 16, padding: 0, border: "none", background: "none", cursor: "pointer" }}
           />
         </div>
       </div>
@@ -1142,18 +809,8 @@ const SettingsView = ({ prefs, onUpdatePref }) => {
         checked={prefs.notificationsEnabled}
         onChange={(v) => onUpdatePref("notificationsEnabled", v)}
       />
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "12px 16px",
-          borderBottom: "1px solid var(--border)",
-        }}
-      >
-        <span style={{ fontSize: 13, color: "var(--text)" }}>
-          Default Channel on Launch
-        </span>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderBottom: "1px solid var(--border)" }}>
+        <span style={{ fontSize: 13, color: "var(--text)" }}>Default Channel on Launch</span>
         <div style={{ display: "flex", gap: 6 }}>
           {["1", "2"].map((ch) => (
             <div
@@ -1168,14 +825,8 @@ const SettingsView = ({ prefs, onUpdatePref }) => {
                 justifyContent: "center",
                 fontFamily: mono,
                 fontSize: 12,
-                color:
-                  prefs.defaultChannel === ch
-                    ? "var(--text)"
-                    : "var(--grey-666)",
-                background:
-                  prefs.defaultChannel === ch
-                    ? "var(--accent)"
-                    : "var(--surface)",
+                color: prefs.defaultChannel === ch ? "var(--text)" : "var(--grey-666)",
+                background: prefs.defaultChannel === ch ? "var(--accent)" : "var(--surface)",
                 cursor: "pointer",
               }}
             >
@@ -1184,33 +835,18 @@ const SettingsView = ({ prefs, onUpdatePref }) => {
           ))}
         </div>
       </div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "12px 16px",
-          borderBottom: "1px solid var(--border)",
-        }}
-      >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderBottom: "1px solid var(--border)" }}>
         <span style={{ fontSize: 13, color: "var(--text)" }}>Time Format</span>
-        <div
-          style={{ display: "flex", gap: 6, fontFamily: mono, fontSize: 10 }}
-        >
-          {[
-            ["24h", "24H"],
-            ["12h", "12H"],
-          ].map(([key, label]) => (
+        <div style={{ display: "flex", gap: 6, fontFamily: mono, fontSize: 10 }}>
+          {[["24h", "24H"], ["12h", "12H"]].map(([key, label]) => (
             <div
               key={key}
               onClick={() => onUpdatePref("timeFormat", key)}
               style={{
                 padding: "4px 8px",
                 borderRadius: 3,
-                color:
-                  prefs.timeFormat === key ? "var(--text)" : "var(--grey-666)",
-                background:
-                  prefs.timeFormat === key ? "var(--accent)" : "var(--surface)",
+                color: prefs.timeFormat === key ? "var(--text)" : "var(--grey-666)",
+                background: prefs.timeFormat === key ? "var(--accent)" : "var(--surface)",
                 cursor: "pointer",
               }}
             >
@@ -1235,11 +871,7 @@ const SettingsView = ({ prefs, onUpdatePref }) => {
         onChange={(v) => window.nts.setPinnedToDesktop(v)}
       />
       <SettingsToggle
-        label={
-          settings.launchAtLoginAvailable
-            ? "Launch at Login"
-            : "Launch at Login (requires packaged build)"
-        }
+        label={settings.launchAtLoginAvailable ? "Launch at Login" : "Launch at Login (requires packaged build)"}
         checked={settings.launchAtLogin}
         onChange={(v) => window.nts.setLaunchAtLogin(v)}
         disabled={!settings.launchAtLoginAvailable}
@@ -1268,7 +900,7 @@ const SettingsView = ({ prefs, onUpdatePref }) => {
 };
 
 const Footer = ({ view, onSetView }) => (
-  <div style={{ display: "flex", borderTop: "1px solid var(--border)" }}>
+  <div style={{ display: "flex", borderTop: "1px solid var(--border)", flexShrink: 0 }}>
     {[
       { key: "schedule", label: "SCHEDULE" },
       { key: "favorites", label: "FAVORITES" },
@@ -1285,10 +917,7 @@ const Footer = ({ view, onSetView }) => (
           letterSpacing: 1,
           color: view === t.key ? "var(--text)" : "var(--grey-555)",
           cursor: "pointer",
-          borderTop:
-            view === t.key
-              ? "2px solid var(--accent)"
-              : "2px solid transparent",
+          borderTop: view === t.key ? "2px solid var(--accent)" : "2px solid transparent",
           marginTop: -1,
         }}
       >
@@ -1304,10 +933,7 @@ const Footer = ({ view, onSetView }) => (
         fontSize: 14,
         color: view === "settings" ? "var(--accent)" : "var(--grey-555)",
         cursor: "pointer",
-        borderTop:
-          view === "settings"
-            ? "2px solid var(--accent)"
-            : "2px solid transparent",
+        borderTop: view === "settings" ? "2px solid var(--accent)" : "2px solid transparent",
         marginTop: -1,
       }}
     >
@@ -1317,14 +943,11 @@ const Footer = ({ view, onSetView }) => (
 );
 
 const SLEEP_OPTIONS = [null, 15, 30, 60, 120, 180];
-const formatSleepLabel = (minutes) =>
-  minutes < 60 ? `${minutes}m` : `${minutes / 60}h`;
+const formatSleepLabel = (minutes) => (minutes < 60 ? `${minutes}m` : `${minutes / 60}h`);
 
 const App = () => {
   const [prefs, setPrefs] = useState(loadPrefs);
-  const [activeChannel, setActiveChannel] = useState(
-    () => loadPrefs().defaultChannel,
-  );
+  const [activeChannel, setActiveChannel] = useState(() => loadPrefs().defaultChannel);
   const [data, setData] = useState(null);
   const [error, setError] = useState(false);
   const [liveNow, setLiveNow] = useState(null);
@@ -1334,7 +957,7 @@ const App = () => {
   const [footerView, setFooterView] = useState("schedule");
   const [pinnedToDesktop, setPinnedToDesktopState] = useState(false);
   const [systemPrefersDark, setSystemPrefersDark] = useState(
-    () => window.matchMedia("(prefers-color-scheme: dark)").matches,
+    () => window.matchMedia("(prefers-color-scheme: dark)").matches
   );
   const audioRef = useRef(null);
   const sleepTimeoutRef = useRef(null);
@@ -1424,11 +1047,9 @@ const App = () => {
   useEffect(() => {
     let cancelled = false;
     const tick = () => {
-      fetchLive()
-        .then((d) => {
-          if (!cancelled) setLiveNow(d);
-        })
-        .catch(() => {});
+      fetchLive().then((d) => {
+        if (!cancelled) setLiveNow(d);
+      }).catch(() => {});
     };
     tick();
     const id = setInterval(tick, 60000);
@@ -1460,12 +1081,8 @@ const App = () => {
   // Pin to Desktop needs to disable the drag region too, otherwise the
   // window still moves via its own drag strip even though it's "locked".
   useEffect(() => {
-    window.nts
-      .getSettings()
-      .then((s) => setPinnedToDesktopState(s.pinnedToDesktop));
-    window.nts.onSettingsChanged((s) =>
-      setPinnedToDesktopState(s.pinnedToDesktop),
-    );
+    window.nts.getSettings().then((s) => setPinnedToDesktopState(s.pinnedToDesktop));
+    window.nts.onSettingsChanged((s) => setPinnedToDesktopState(s.pinnedToDesktop));
   }, []);
 
   // Keeps "Auto" theme in sync if the user flips macOS's own appearance
@@ -1477,18 +1094,12 @@ const App = () => {
     return () => mq.removeEventListener("change", onChange);
   }, []);
 
-  const activeTheme =
-    prefs.theme === "auto"
-      ? systemPrefersDark
-        ? "dark"
-        : "light"
-      : prefs.theme;
+  const activeTheme = prefs.theme === "auto" ? (systemPrefersDark ? "dark" : "light") : prefs.theme;
   const themeVars = THEME_VARS[activeTheme];
   // The "white" accent preset is really "monochrome" — resolve it to
   // whatever the current theme's own text color is, so it's never an
   // invisible white-on-white (or black-on-black) accent.
-  const resolvedAccent =
-    prefs.accentColor === "#ffffff" ? themeVars["--text"] : prefs.accentColor;
+  const resolvedAccent = prefs.accentColor === "#ffffff" ? themeVars["--text"] : prefs.accentColor;
 
   // Mirrors playingChannel to main so the tray menu can show which channel
   // (if any) is checked.
@@ -1508,18 +1119,8 @@ const App = () => {
   // Tray title mirrors whatever's actually streaming, blank if nothing is
   // (or if the user's turned the menu bar text off in Settings).
   useEffect(() => {
-    if (
-      prefs.showNowPlayingInMenuBar &&
-      playingChannel &&
-      liveNow &&
-      liveNow[`ch${playingChannel}`]
-    ) {
-      window.nts.setTrayTitle(
-        formatTrayTitle(
-          liveNow[`ch${playingChannel}`].broadcast_title,
-          playingChannel,
-        ),
-      );
+    if (prefs.showNowPlayingInMenuBar && playingChannel && liveNow && liveNow[`ch${playingChannel}`]) {
+      window.nts.setTrayTitle(formatTrayTitle(liveNow[`ch${playingChannel}`].broadcast_title, playingChannel));
     } else {
       window.nts.setTrayTitle("");
     }
@@ -1533,33 +1134,15 @@ const App = () => {
     if (!now) return;
     const prev = prevTitleRef.current[activeChannel];
     if (prev && prev !== now.broadcast_title) {
-      new Notification(
-        `NTS ${activeChannel}: ${parseRepeatTitle(now.broadcast_title).title}`,
-        {
-          body:
-            (now.embeds &&
-              now.embeds.details &&
-              now.embeds.details.location_long) ||
-            "",
-        },
-      );
+      new Notification(`NTS ${activeChannel}: ${parseRepeatTitle(now.broadcast_title).title}`, {
+        body: (now.embeds && now.embeds.details && now.embeds.details.location_long) || "",
+      });
     }
     prevTitleRef.current[activeChannel] = now.broadcast_title;
   }, [liveNow, activeChannel, prefs.notificationsEnabled]);
 
   return (
-    <div
-      style={{
-        background: "var(--bg)",
-        border: "1px solid var(--border)",
-        borderRadius: 4,
-        maxHeight: "100vh",
-        overflowX: "hidden",
-        overflowY: "auto",
-        ...themeVars,
-        "--accent": resolvedAccent,
-      }}
-    >
+    <div style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 4, height: "100vh", boxSizing: "border-box", display: "flex", flexDirection: "column", overflow: "hidden", ...themeVars, "--accent": resolvedAccent }}>
       <style>{`
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
         .pulse-dot { animation: pulse 1.6s ease-in-out infinite; }
@@ -1570,25 +1153,18 @@ const App = () => {
           alignItems: "center",
           justifyContent: "center",
           height: 16,
+          flexShrink: 0,
           WebkitAppRegion: pinnedToDesktop ? "no-drag" : "drag",
           cursor: pinnedToDesktop ? "default" : "grab",
         }}
       >
         <div style={{ display: "flex", gap: 3 }}>
           {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              style={{
-                width: 3,
-                height: 3,
-                borderRadius: "50%",
-                background: "var(--border-strong)",
-              }}
-            />
+            <div key={i} style={{ width: 3, height: 3, borderRadius: "50%", background: "var(--border-strong)" }} />
           ))}
         </div>
       </div>
-      <div style={{ display: "flex", borderBottom: "1px solid var(--border)" }}>
+      <div style={{ display: "flex", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
         {["1", "2"].map((ch) => (
           <div
             key={ch}
@@ -1601,10 +1177,7 @@ const App = () => {
               fontSize: 28,
               fontWeight: 700,
               color: activeChannel === ch ? "var(--text)" : "var(--grey-444)",
-              borderBottom:
-                activeChannel === ch
-                  ? "2px solid var(--accent)"
-                  : "2px solid transparent",
+              borderBottom: activeChannel === ch ? "2px solid var(--accent)" : "2px solid transparent",
               cursor: "pointer",
               WebkitAppRegion: "no-drag",
             }}
@@ -1623,49 +1196,23 @@ const App = () => {
         onCycleSleep={cycleSleep}
         use12h={prefs.timeFormat === "12h"}
       />
-      {footerView === "schedule" && (
-        <>
-          <ChannelPane
-            data={data && data.ch1}
-            active={activeChannel === "1"}
-            favorites={favorites}
-            onToggleFavorite={toggleFavorite}
-            notificationsEnabled={prefs.notificationsEnabled}
-            use12h={prefs.timeFormat === "12h"}
-          />
-          <ChannelPane
-            data={data && data.ch2}
-            active={activeChannel === "2"}
-            favorites={favorites}
-            onToggleFavorite={toggleFavorite}
-            notificationsEnabled={prefs.notificationsEnabled}
-            use12h={prefs.timeFormat === "12h"}
-          />
-        </>
-      )}
-      {footerView === "favorites" && (
-        <FavoritesView
-          data={data}
-          favorites={favorites}
-          onToggleFavorite={toggleFavorite}
-          use12h={prefs.timeFormat === "12h"}
-        />
-      )}
-      {footerView === "settings" && (
-        <SettingsView prefs={prefs} onUpdatePref={updatePref} />
-      )}
-      {error && (
-        <div
-          style={{
-            padding: "6px 16px",
-            fontSize: 9,
-            color: "#552",
-            fontFamily: mono,
-          }}
-        >
-          fetch error &mdash; showing last known data
-        </div>
-      )}
+      <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
+        {footerView === "schedule" && (
+          <>
+            <ChannelPane data={data && data.ch1} active={activeChannel === "1"} favorites={favorites} onToggleFavorite={toggleFavorite} notificationsEnabled={prefs.notificationsEnabled} use12h={prefs.timeFormat === "12h"} />
+            <ChannelPane data={data && data.ch2} active={activeChannel === "2"} favorites={favorites} onToggleFavorite={toggleFavorite} notificationsEnabled={prefs.notificationsEnabled} use12h={prefs.timeFormat === "12h"} />
+          </>
+        )}
+        {footerView === "favorites" && (
+          <FavoritesView data={data} favorites={favorites} onToggleFavorite={toggleFavorite} use12h={prefs.timeFormat === "12h"} />
+        )}
+        {footerView === "settings" && <SettingsView prefs={prefs} onUpdatePref={updatePref} />}
+        {error && (
+          <div style={{ padding: "6px 16px", fontSize: 9, color: "#552", fontFamily: mono }}>
+            fetch error &mdash; showing last known data
+          </div>
+        )}
+      </div>
       <Footer view={footerView} onSetView={setFooterView} />
     </div>
   );
