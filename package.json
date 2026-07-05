@@ -40,8 +40,8 @@
       "icon": "build/icon.icns",
       "category": "public.app-category.music",
       "target": [
-        { "target": "dmg", "arch": ["arm64"] },
-        { "target": "zip", "arch": ["arm64"] }
+        { "target": "dmg", "arch": ["arm64", "x64"] },
+        { "target": "zip", "arch": ["arm64", "x64"] }
       ]
     },
     "dmg": {
@@ -50,6 +50,11 @@
         { "x": 130, "y": 220, "type": "file" },
         { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
       ]
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "PO0LS",
+      "repo": "NTS-Widget"
     }
   }
 }
