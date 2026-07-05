@@ -20,7 +20,14 @@ Unofficial fan project. Not affiliated with or endorsed by NTS Radio. Built agai
 
 ## Screenshot
 
-_Add a screenshot here — drag one into the repo and reference it, e.g. `docs/screenshot.png`._
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/Screenshot_Dark.png" width="24%">
+  <img src="screenshots/Screenshot_Light.png" width="24%">
+  <img src="screenshots/Screenshot_Favorites.png" width="24%">
+  <img src="screenshots/Screenshot_Settings.png" width="24%">
+</p>
 
 ## Installation
 
