@@ -4,6 +4,18 @@ A macOS menu bar widget for [NTS Radio](https://www.nts.live) — full-day sched
 
 Unofficial fan project. Not affiliated with or endorsed by NTS Radio. Built against NTS's public (undocumented) schedule/live endpoints — see [Disclaimer](#disclaimer).
 
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/Screenshot_Dark.png" width="48%">
+  <img src="screenshots/Screenshot_Light.png" width="48%">
+</p>
+
+<p align="center">
+  <img src="screenshots/Screenshot_Favorites.png" width="48%">
+  <img src="screenshots/Screenshot_Settings.png" width="48%">
+</p>
+
 ## Features
 
 - **Full-day schedule** for both NTS 1 and NTS 2, auto-scrolled to the current show with past/upcoming context
@@ -17,17 +29,6 @@ Unofficial fan project. Not affiliated with or endorsed by NTS Radio. Built agai
 - **Menu bar now-playing text**, with the icon hidden while it's showing so it reads as a clean title
 - Draggable, resizable window; optional "Pin to Desktop" mode that drops it behind other windows like a true desktop widget
 - Launch at Login, Show in Dock, and other quality-of-life settings
-
-## Screenshot
-
-## Screenshots
-
-<p align="center">
-  <img src="screenshots/Screenshot_Dark.png" width="24%">
-  <img src="screenshots/Screenshot_Light.png" width="24%">
-  <img src="screenshots/Screenshot_Favorites.png" width="24%">
-  <img src="screenshots/Screenshot_Settings.png" width="24%">
-</p>
 
 ## Installation
 
