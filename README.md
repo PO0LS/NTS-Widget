@@ -59,7 +59,7 @@ To produce a distributable `.dmg` + `.zip`:
 npm run dist
 ```
 
-Output goes to `dist/` (e.g. `dist/NTS Widget-1.0.0-arm64.dmg`). This repo is configured for Apple Silicon (`arm64`) only — edit the `"mac"."target"` `arch` arrays in `package.json` if you need an Intel build too.
+Output goes to `dist/` (e.g. `dist/NTS Widget-1.0.0-arm64.dmg`). 
 
 ## Settings
 
