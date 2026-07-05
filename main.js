@@ -3,6 +3,7 @@ const path = require("path");
 const fs = require("fs");
 
 let win, tray, trayIcon, emptyIcon;
+let isQuitting = false;
 
 const settingsPath = path.join(app.getPath("userData"), "settings.json");
 
@@ -53,6 +54,17 @@ function createWindow() {
   win.setResizable(!pinnedToDesktop);
   win.setMovable(!pinnedToDesktop);
   win.setAlwaysOnTop(true, pinnedToDesktop ? "desktop" : "floating");
+
+  // This is a tray-toggled widget, not a document window — a stray Cmd+W
+  // (or similar) should hide it, not destroy the BrowserWindow, since a
+  // destroyed `win` left the tray menu's click handlers calling methods on
+  // a dead object ("Object has been destroyed") until the whole app quit.
+  win.on("close", (event) => {
+    if (!isQuitting) {
+      event.preventDefault();
+      win.hide();
+    }
+  });
 
   win.loadFile("renderer/index.html");
 }
@@ -114,7 +126,10 @@ ipcMain.handle("get-settings", () => getSettings());
 ipcMain.on("set-pinned-to-desktop", (event, state) => setPinnedToDesktop(state));
 ipcMain.on("set-launch-at-login", (event, state) => setLaunchAtLogin(state));
 ipcMain.on("set-show-in-dock", (event, state) => setShowInDock(state));
-ipcMain.on("quit-app", () => app.quit());
+ipcMain.on("quit-app", () => {
+  isQuitting = true;
+  app.quit();
+});
 ipcMain.on("playing-channel-changed", (event, channel) => {
   playingChannel = channel;
   if (rebuildMenu) rebuildMenu();
@@ -154,7 +169,13 @@ app.whenReady().then(() => {
         },
       },
       { type: "separator" },
-      { label: "Quit", click: () => app.quit() },
+      {
+        label: "Quit",
+        click: () => {
+          isQuitting = true;
+          app.quit();
+        },
+      },
     ]);
     tray.setContextMenu(menu);
   };
@@ -165,6 +186,10 @@ app.whenReady().then(() => {
   globalShortcut.register("MediaPlayPause", () => {
     win.webContents.send("toggle-play-shortcut");
   });
+});
+
+app.on("before-quit", () => {
+  isQuitting = true;
 });
 
 app.on("will-quit", () => {
