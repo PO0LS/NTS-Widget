@@ -46,7 +46,7 @@ The app lives in your menu bar (look for the icon near the clock). Click the tra
 Requires Node.js and npm.
 
 ```bash
-git clone <this-repo-url>
+git clone https://github.com/PO0LS/NTS-Widget.git
 cd nts-widget
 npm install
 npm run build   # bundles renderer/app.jsx -> renderer/bundle.js
